@@ -6,7 +6,7 @@ use IEEE.NUMERIC_STD.ALL;
 entity myRegister is 
 port(
   clk: in std_ulogic;
-  reset: in std_ulogic;
+  regreset: in std_ulogic;
   load: in std_ulogic;
   D: in std_ulogic_vector(7 downto 0);
   Q: out std_ulogic_vector(7 downto 0)

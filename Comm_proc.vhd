@@ -40,25 +40,26 @@ ARCHITECTURE myarch OF Comm_Proc IS
   COMPONENT reg
     PORT(
 	 clk: in std_ulogic;
-	 reset: in std_ulogic;
+	 regreset: in std_ulogic;
          load: in std_ulogic;
          D: in std_ulogic_vector(7 downto 0);
          Q: out std_ulogic_vector(7 downto 0)
          );
     END COMPONENT;
-	SIGNAL reset0, load0: std_ulogic;
+	SIGNAL regreset0, load0: std_ulogic;
 	SIGNAL D0, Q0: std_ulogic_vector(7 downto 0);
   
   FOR cnt0: counter USE ENTITY work.myCounter(Behavioral);
   FOR reg0: reg USE ENTITY work.myRegister(Behavioral);
   
-  TYPE state_type IS (INIT, TRANSMIT1, valid_wait, P_State, L_State, PEAK, LIST, Num_Recog, Word_Num); 
+  TYPE state_type IS (INIT, TRANSMIT1, valid_wait, P_State, L_State, PEAK, LIST, Num_Recog, Word_Num, START1, data_wait, TRANSMIT2, TRANSMIT2_OFF, data_check); 
   SIGNAL curState, nextState: state_type;
 
 
 BEGIN
  cnt0: counter PORT MAP(clk, rst0, en0, cnt0Out);
  combi_nextState: PROCESS(curState)
+ 
    BEGIN
     CASE curState IS
 	
@@ -133,3 +134,98 @@ BEGIN
 	else 
 		nextState <= INIT;
 	end if; 
+	
+	WHEN Word_Num =>
+	  if cnt0Out >= "000011" then 
+		nextState <= START1;
+	  elsif 
+             cnt0Out < "000011" then 
+		nextState <= valid_wait;
+	  end if; 
+	  
+	WHEN START1 =>
+	  nextState <= data_wait;
+
+	WHEN data_wait =>
+	  if dataReady = '1' then 
+		nextState <= TRANSMIT2; 
+	  else 
+		null;
+          end if;
+		
+	WHEN TRANSMIT2 =>
+	  nextState <= TRANSMIT2_OFF;
+	  
+	WHEN TRANSMIT2_OFF =>
+	  if txDone = '1' then 
+	    nextState <= data_check;
+	  else 
+	    null; 
+          end if;
+		
+	WHEN data_check =>
+	--Oscar's ASM chart
+	
+    end CASE;
+  end PROCESS; 
+
+  combi_out: PROCESS(curState)
+  BEGIN
+  
+  --inital conditions 
+  en0 <= '0';
+  rst0 <= '0';
+  regreset0 <= '0';
+  load0 <= '0';
+  D0 <= "00000000";
+
+  if curState = INIT then 
+  --INITIAL CONDITIONS 
+  end if;
+  
+  if curState = TRANSMIT1 then 
+  txNow <= '1';
+  end if; 
+  
+  if curState = PEAK then 
+  -- PRINT PEAK 
+  end if;
+  
+  if curState = LIST then 
+  -- PRINT LIST 
+  end if;
+  
+  if curState = Num_Recog then 
+  txNow <= '1'; 
+  end if; 
+  
+  if curState = Word_Num then 
+  load0 <= '1';
+  D0 <= dataIn;
+  en0 <= '1'; -- need to find number of clock cycles for when there are 3 numbers. 
+  end if; 
+  
+  if curState = START1 then 
+  start <= '1'; 
+  numWords <= --NNN
+  end if; 
+  
+  if curState = TRANSMIT2 then 
+  txNow <= '1'; 
+  end if; 
+  
+  if curState = TRANSMIT2_OFF then 
+  txNow <= '0'; 
+  end if; 
+  
+  END PROCESS; 
+
+  seq_state: PROCESS (clk, reset)
+  BEGIN
+    if reset = '0' then
+      curState <= INIT;
+    elsif clk'EVENT AND clk='1' then
+      curState <= nextState;
+    end if;
+  end PROCESS;
+end;
