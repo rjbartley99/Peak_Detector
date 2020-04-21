@@ -8,19 +8,19 @@ port(
   reset: in std_ulogic;
   dataReady: in std_ulogic;
   seqDone: in std_ulogic;
-  valid: in std_ulogic;
-  oe: in std_ulogic;
-  fe: in std_ulogic;
+  rxNow: in std_ulogic;
+  ovErr: in std_ulogic;
+  framErr: in std_ulogic;
   txDone: in std_ulogic;
   byte: in std_ulogic_vector(7 downto 0);
   maxIndex: in std_ulogic_vector(11 downto 0);
   dataResults: in std_ulogic_vector(55 downto 0);
-  dataIn: in std_ulogic_vector(7 downto 0);
+  rxData: in std_ulogic_vector(7 downto 0);
   start: out std_ulogic;
-  done: out std_ulogic;
+  rxDone: out std_ulogic;
   txNow: out std_ulogic;
-  numWords: out std_ulogic_vector(11 downto 0);
-  dataOut: out std_ulogic_vector(7 downto 0)
+  numWords_bcd: out std_ulogic_vector(11 downto 0);
+  txData: out std_ulogic_vector(7 downto 0)
   );
 end;
 
@@ -52,7 +52,7 @@ ARCHITECTURE myarch OF Comm_Proc IS
   FOR cnt0: counter USE ENTITY work.myCounter(Behavioral);
   FOR reg0: reg USE ENTITY work.myRegister(Behavioral);
   
-  TYPE state_type IS (INIT, TRANSMIT1, valid_wait, P_State, L_State, PEAK, LIST, Num_Recog, Word_Num, START1, data_wait, TRANSMIT2, TRANSMIT2_OFF, data_check); 
+  TYPE state_type IS (INIT, TRANSMIT1, valid_wait, Num_Recog, Word_Num, START1, data_wait, TRANSMIT2, TRANSMIT2_OFF, data_check); 
   SIGNAL curState, nextState: state_type;
 
 
@@ -64,72 +64,48 @@ BEGIN
     CASE curState IS
 	
 	WHEN INIT =>
-	 if valid = '1' then 
+	 if rxNow = '1' then 
 		nextState <= TRANSMIT1;
-	 elsif valid = '0' then 
+	 elsif rxNow = '0' then 
 		nextState <= INIT;
 	 end if; 
 	 
 	WHEN TRANSMIT1 =>
-	 if dataIn = "01000001" then --if dataIn = A
+	 if rxData = "01000001" then --if dataIn = A
 	    nextState <= valid_wait;
-	 elsif dataIn = "01100001" then --if dataIn = a
+	 elsif rxData = "01100001" then --if dataIn = a
 	    nextState <= valid_wait;
 	 else
-		nextState <= P_State;
+		nextState <= INIT;
 	 end if;
-	 
-	WHEN P_State => 
-	 if dataIn = "01010000" then -- if dataIn = P
-		nextState <= PEAK;
-         elsif dataIn = "01110000" then -- if dataIn = p
-		nextState <= PEAK;
-	 else 
-	    nextState <= L_State;
-	 end if;
-	 
-	WHEN PEAK => -- print peak 
-	 nextState <= INIT;
-	 
-	WHEN L_State => 
-	 if dataIn = "01001100" then  -- if dataIn = L
-		nextState <= LIST;
-	 elsif dataIn = "01101100" then  -- if dataIn = l
-		nextState <= LIST;
-	 else 
-	    nextState <= INIT;
-	 end if;
-	 
-	WHEN LIST => -- print list
-	 nextState <= INIT;
-	 
+	
 	WHEN valid_wait =>
-	 if valid = '1' then 
+	 if rxNow = '1' then 
 		nextState <= Num_Recog;
 	 else 
 		nextState <= valid_wait;
 	 end if;
 	 
 	WHEN Num_Recog =>
-	 if dataIn = "00110000" then 
+	 if rxData = "00110000" then 
 		nextState <= Word_Num;
-	elsif dataIn = "00110001" then 
+	elsif rxData = "00110001" then 
 		nextState <= Word_Num;
-	elsif dataIn = "00110010" then 
+	elsif rxData = "00110010" then 
 		nextState <= Word_Num;
-	elsif dataIn = "00110011" then 
+	elsif rxData = "00110011" then 
 		nextState <= Word_Num;
-	elsif dataIn = "00110100" then 
+	elsif rxData = "00110100" then 
 		nextState <= Word_Num;
-	elsif dataIn = "00110101" then 
+	elsif rxData = "00110101" then 
 		nextState <= Word_Num;
-	elsif dataIn = "00110110" then 
+	elsif rxData = "00110110" then 
 		nextState <= Word_Num;
-	elsif dataIn = "00110111" then 
+	elsif rxData = "00110111" then 
 		nextState <= Word_Num;
-	elsif dataIn = "00111000" then 
+	elsif rxData = "00111000" then 
 		nextState <= Word_Num;
-	elsif dataIn = "00111001" then 
+	elsif rxData = "00111001" then 
 		nextState <= Word_Num;
 	else 
 		nextState <= INIT;
@@ -187,27 +163,19 @@ BEGIN
   txNow <= '1';
   end if; 
   
-  if curState = PEAK then 
-  -- PRINT PEAK 
-  end if;
-  
-  if curState = LIST then 
-  -- PRINT LIST 
-  end if;
-  
   if curState = Num_Recog then 
   txNow <= '1'; 
   end if; 
   
   if curState = Word_Num then 
   load0 <= '1';
-  D0 <= dataIn;
+  D0 <= rxData;
   en0 <= '1'; -- need to find number of clock cycles for when there are 3 numbers. 
   end if; 
   
   if curState = START1 then 
   start <= '1'; 
-  numWords <= --NNN
+  numWords_bcd <= --NNN
   end if; 
   
   if curState = TRANSMIT2 then 
