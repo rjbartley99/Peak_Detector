@@ -52,12 +52,13 @@ ARCHITECTURE myarch OF Comm_Proc IS
   FOR cnt0: counter USE ENTITY work.myCounter(Behavioral);
   FOR reg0: reg USE ENTITY work.myRegister(Behavioral);
   
-  TYPE state_type IS (INIT, TRANSMIT1, valid_wait, Num_Recog, Word_Num, START1, data_wait, TRANSMIT2, TRANSMIT2_OFF, data_check); 
+  TYPE state_type IS (INIT, TRANSMIT1, valid_wait, Num_Recog, Word_Num, START1, data_wait, TRANSMIT2, TRANSMIT2_OFF, data_check, Data_Ready); 
   SIGNAL curState, nextState: state_type;
 
 
 BEGIN
  cnt0: counter PORT MAP(clk, rst0, en0, cnt0Out);
+ reg0: reg PORT MAP(clk, regreset0, load0, D0, Q0);
  combi_nextState: PROCESS(curState)
  
    BEGIN
@@ -87,25 +88,25 @@ BEGIN
 	 end if;
 	 
 	WHEN Num_Recog =>
-	 if rxData = "00110000" then 
+	 if rxData = "00110000" then  --0
 		nextState <= Word_Num;
-	elsif rxData = "00110001" then 
+	elsif rxData = "00110001" then --1
 		nextState <= Word_Num;
-	elsif rxData = "00110010" then 
+	elsif rxData = "00110010" then --2
 		nextState <= Word_Num;
-	elsif rxData = "00110011" then 
+	elsif rxData = "00110011" then --3
 		nextState <= Word_Num;
-	elsif rxData = "00110100" then 
+	elsif rxData = "00110100" then --4
 		nextState <= Word_Num;
-	elsif rxData = "00110101" then 
+	elsif rxData = "00110101" then --5
 		nextState <= Word_Num;
-	elsif rxData = "00110110" then 
+	elsif rxData = "00110110" then --6
 		nextState <= Word_Num;
-	elsif rxData = "00110111" then 
+	elsif rxData = "00110111" then --7
 		nextState <= Word_Num;
-	elsif rxData = "00111000" then 
+	elsif rxData = "00111000" then --8
 		nextState <= Word_Num;
-	elsif rxData = "00111001" then 
+	elsif rxData = "00111001" then --9
 		nextState <= Word_Num;
 	else 
 		nextState <= INIT;
@@ -140,7 +141,14 @@ BEGIN
           end if;
 		
 	WHEN data_check =>
-	--Oscar's ASM chart
+	  if seqDone = '1' then 
+ 	    nextState <= Data_Ready; 
+	  else 
+	    nextState <= TRANSMIT2_OFF;
+	  end if; 
+	
+	WHEN Data_Ready =>
+	  nextState <= INIT; 
 	
     end CASE;
   end PROCESS; 
@@ -175,7 +183,7 @@ BEGIN
   
   if curState = START1 then 
   start <= '1'; 
-  numWords_bcd <= --NNN
+  txData <= byte; --NNN
   end if; 
   
   if curState = TRANSMIT2 then 
