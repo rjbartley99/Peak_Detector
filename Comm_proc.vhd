@@ -32,62 +32,85 @@ end;
 ARCHITECTURE myarch OF cmdProc IS
 
   COMPONENT counter
-	PORT(
-	     clk: in std_logic;
-             rst: in std_logic;
-       	     en: in std_logic;
-             cntOut: out std_logic_vector(5 downto 0)
-	     );
-  END COMPONENT;
-  SIGNAL rst0, en0:STD_LOGIC;
-  SIGNAL cnt0Out:STD_LOGIC_VECTOR(5 downto 0);
-  
+	PORT (
+     clk: in std_logic;
+     rst: in std_logic;
+     en: in std_logic;
+     cntOut: out std_logic_vector(5 downto 0)
+     );
+     END COMPONENT;
+     SIGNAL rst0, en0:STD_LOGIC; 
+     SIGNAL cnt0Out:STD_LOGIC_VECTOR(5 downto 0);
+
   COMPONENT reg
-    PORT(
+    PORT (
 	 clk: in std_logic;
 	 regreset: in std_logic;
-         load: in std_logic;
-         D: in std_logic_vector(7 downto 0);
-         Q: out std_logic_vector(7 downto 0)
-         );
-    END COMPONENT;
-	SIGNAL regreset0, load0: std_logic;
-	SIGNAL D0, Q0: std_logic_vector(7 downto 0);
+     load: in std_logic;
+     D: in std_logic_vector(7 downto 0);
+     Q: out std_logic_vector(7 downto 0)
+     );
+     END COMPONENT;
+     SIGNAL regreset0, load0: std_logic;
+     SIGNAL D0, Q0: std_logic_vector(7 downto 0);
 	
-	COMPONENT shift
-	   PORT (
-        shift_in : in std_logic_vector(7 downto 0); -- DATA IN
-        en_shift : in std_logic; -- CHIP ENABLE
-        load_shift : in std_logic;
-        clk : in std_logic; -- CLOCK
-        shift_out : out BCD_ARRAY_TYPE(2 downto 0) -- SHIFTER OUTPUT
-        );
-    END COMPONENT;
-    SIGNAL shift_in: std_logic_vector(7 downto 0);              
-    SIGNAL shift_out: BCD_ARRAY_TYPE(2 downto 0);
-    SIGNAL en1, load1 : std_logic;
-   
+  COMPONENT shift
+	 PORT (
+      shift_in : in std_logic_vector(7 downto 0); -- DATA IN
+      en_shift : in std_logic; -- CHIP ENABLE
+      load_shift : in std_logic;
+      clk : in std_logic; -- CLOCK
+      shift_out : out BCD_ARRAY_TYPE(2 downto 0) -- SHIFTER OUTPUT
+      );
+      END COMPONENT;
+      SIGNAL shift_in: std_logic_vector(7 downto 0);              
+      SIGNAL shift_out: BCD_ARRAY_TYPE(2 downto 0);
+      SIGNAL en1, load1 : std_logic;
+      
+  COMPONENT seqdonecounter
+    PORT(
+     clk : in std_logic;
+     rst : in std_logic;
+     en : in std_logic;
+     SEQcntOut : out std_logic_vector(1 downto 0)
+     );
+     END COMPONENT;
+     SIGNAL rst_SeqDone, en_SeqDone:STD_LOGIC; 
+     SIGNAL SEQcntOut:STD_LOGIC_VECTOR(1 downto 0);
+      
   COMPONENT byteMux
-     Port ( 
-    clk : in std_logic;
-    data : in std_logic_vector(3 downto 0);
-    address : in std_logic_vector(5 downto 0);
-    q: out  std_logic_vector(7 downto 0)
-);
-  END COMPONENT;   
-  SIGNAL data: std_logic_vector(3 downto 0);
-  SIGNAL address: std_logic_vector(5 downto 0);   
-  SIGNAL q: std_logic_vector(7 downto 0);
+     PORT ( 
+      clk : in std_logic;
+      data : in std_logic_vector(3 downto 0);
+      address : in std_logic_vector(5 downto 0);
+      q: out  std_logic_vector(7 downto 0)
+      );
+      END COMPONENT;   
+      SIGNAL data: std_logic_vector(3 downto 0);
+      SIGNAL address: std_logic_vector(5 downto 0);   
+      SIGNAL q: std_logic_vector(7 downto 0);
+      
+  COMPONENT formatmux is
+    PORT ( 
+        clk : in std_logic;
+        countIn : in std_logic_vector(5 downto 0);
+        formatout: out std_logic_vector(7 downto 0)
+        );
+        END COMPONENT; 
+        SIGNAL countIn: std_logic_vector(5 downto 0);   
+        SIGNAL formatout: std_logic_vector(7 downto 0);
      
      
   FOR cnt0: counter USE ENTITY work.myCounter(Behavioral); 
   FOR reg0: reg USE ENTITY work.myRegister(Behavioral);
   FOR shift0: shift USE ENTITY work.shift(shift_arch);  
+  FOR Seqcnt: seqdonecounter USE ENTITY work.seqdonecounter(Behavioral);
   FOR mux1: bytemux USE ENTITY work.bytemux(mux);
+  FOR mux2: formatmux USE ENTITY work.formatmux(Behavioral);
  
-  TYPE state_type IS (STATE1,INIT,COUNT_CHECK, A_CHECK, NUM_CHECK, ERROR, CORRECT_WORD, 
-  SHIFTER, WAIT_SHIFT, FORMAT1, SPACE , EQUALS, SLASH, nSTATE, rSTATE, FORMAT2, FORMAT3, 
-  WAIT_FORMAT, START1, DATA_WAIT, WAIT_BYTE, LOAD_BYTE, BYTE1, TRANSMIT1, WAIT_TX, LOAD_BYTE2, BYTE2, TRANSMIT2, SEQ_CHECK); 
+  TYPE state_type IS (STATE1, INIT, COUNT_CHECK, A_CHECK, NUM_CHECK, ERROR, CORRECT_WORD, 
+  SHIFTER, WAIT_SHIFT, FORMAT1, FORMAT2, FORMAT3, WAIT_FORMAT, FORMAT_CHECK, SEQ_CHECK, FINAL_FORMAT, START1, DATA_WAIT,WAIT_BYTE,
+  LOAD_BYTE, LAST_BYTE, BYTE1, TRANSMIT1, WAIT_TX, LOAD_BYTE2, BYTE2, TRANSMIT2, WAIT_TX2 ); 
   SIGNAL curState, nextState: state_type;
 
 
@@ -95,9 +118,11 @@ BEGIN
  cnt0: counter PORT MAP(clk, rst0, en0, cnt0Out);
  reg0: reg PORT MAP(clk, regreset0, load0, D0, Q0); 
  shift0: shift PORT MAP(shift_in,en1,load1,clk,shift_out);
+ Seqcnt: SeqDoneCounter PORT MAP(clk,rst_SeqDone,en_SeqDone,SEQcntOut);
  mux1: ByteMUX PORT MAP(clk,data,address,q);
+ mux2: formatmux PORT MAP(clk,countIn,formatout);
  
- combi_nextState: PROCESS(curState, rxNow, rxData, cnt0Out,txdone,dataready)
+ combi_nextState: PROCESS(curState, rxNow, rxData, cnt0Out,txdone,dataready,SEQcntOut)
   BEGIN    
     CASE curState IS
 	
@@ -128,33 +153,15 @@ BEGIN
 	 end if;
 	 
 	WHEN NUM_CHECK =>
-	 if rxData = "00110000" then  --0
-		nextState <= CORRECT_WORD;
-	elsif rxData = "00110001" then --1
-		nextState <= CORRECT_WORD;
-	elsif rxData = "00110010" then --2
-		nextState <= CORRECT_WORD;
-	elsif rxData = "00110011" then --3
-		nextState <= CORRECT_WORD;
-	elsif rxData = "00110100" then --4
-		nextState <= CORRECT_WORD;
-	elsif rxData = "00110101" then --5
-		nextState <= CORRECT_WORD;
-	elsif rxData = "00110110" then --6
-		nextState <= CORRECT_WORD;
-	elsif rxData = "00110111" then --7
-		nextState <= CORRECT_WORD;
-	elsif rxData = "00111000" then --8
-		nextState <= CORRECT_WORD;
-	elsif rxData = "00111001" then --9
+	 if (rxData >= "00110000") and (rxData <= "00111001") then  --0
 		nextState <= CORRECT_WORD;
 	else 
-		nextState <= INIT;
+		nextState <= ERROR;
 	end if; 
 	
 	WHEN ERROR => 
-		nextState <= INIT;
-	
+     nextState <= curState;
+	  
 	WHEN CORRECT_WORD =>
 	  if (cnt0Out <= "000011") and (cnt0Out > "000000" ) then
 	  nextState <= SHIFTER;                                 
@@ -166,61 +173,53 @@ BEGIN
 	  end if; 
  
    WHEN SHIFTER =>
-	 if cnt0Out >= "000100" then 
+	 if cnt0Out >= "000100"  then 
 	 NextState <= WAIT_SHIFT;        
 	 else  
 	   nextState <= INIT;
 	 end if;
 	
 	WHEN WAIT_SHIFT =>
+	 if txdone ='1' then
 	  nextState <= FORMAT1;
-
+    else
+	  nextState <= curState;
+	  end if; 
+	  
 	WHEN FORMAT1 =>
-	  if txdone = '0' then
-	  NextState <= curState; 
-	  elsif cnt0Out = "000000" then
-	  NextState <= SPACE;
-	  elsif cnt0Out = "000001" then
-	  NextState <= EQUALS;
-	  elsif cnt0Out = "000010" OR cnt0Out = "000100" then
-	  NextState <= SLASH;
-	  elsif cnt0Out = "000011" then
-	  NextState <= nSTATE;
-	  elsif cnt0Out = "000101" then
-	  NextState <= rSTATE;
-	  end if;
-	
-	WHEN SPACE =>
-	  nextState <= FORMAT2;
-	
-	WHEN EQUALS =>
-	  nextState <= FORMAT2;
-	
-	WHEN SLASH =>
-	  nextState <= FORMAT2;
-	
-	WHEN nSTATE =>
-	  nextState <= FORMAT2;
-	
-	WHEN rSTATE =>
 	  nextState <= FORMAT2;
 	
 	WHEN FORMAT2 =>
 	  nextState <= FORMAT3;
 	   
 	WHEN FORMAT3 =>         
-	   if cnt0Out <= "000101" then
-	   nextState <= FORMAT1;
-	   else
 	   nextState <= WAIT_FORMAT;
-	   end if;
     
     WHEN WAIT_FORMAT =>
        if txdone = '1' then 
-       nextState <= START1;
+       nextState <= FORMAT_CHECK;
        else    
 	   nextState <= curState; 
-	   end if;                
+	   end if;
+	
+	WHEN FORMAT_CHECK =>
+	  if cnt0Out > "001001" then
+	   nextState <= SEQ_CHECK;
+	   else
+	   nextState <= FORMAT1;
+	   end if; 
+	
+	WHEN SEQ_CHECK =>    
+	  if SEQcntOut = "01" then
+	    nextState <= FINAL_FORMAT;
+	  elsif SEQcntOut = "10" then
+	    nextState <= STATE1;
+	  else 
+	    nextState <= START1; 
+	  end if;                 
+	
+	WHEN FINAL_FORMAT =>
+	   nextState <= FORMAT1;
 	
 	WHEN START1 =>
 	  nextState <= DATA_WAIT; 
@@ -232,11 +231,18 @@ BEGIN
 	  nextState <= CurState;
    	  end if;
    	
-   	WHEN WAIT_BYTE =>
+   	WHEN WAIT_BYTE =>   
    	  nextState <= LOAD_BYTE;
-   	
+   	  
    	WHEN LOAD_BYTE =>
+   	  if seqDone = '1' then
+	  nextState <= LAST_BYTE; 
+	  else
    	  nextState <= BYTE1;
+   	  end if;
+   	
+   	WHEN LAST_BYTE =>
+   	  nextState <= TRANSMIT1;
    	
    	WHEN BYTE1 =>
 	  nextState <= TRANSMIT1;
@@ -258,11 +264,11 @@ BEGIN
 	  nextState <= TRANSMIT2; 
 	  
 	WHEN TRANSMIT2 =>      
-	   nextState <= SEQ_CHECK; 
+	   nextState <= WAIT_TX2; 
 	
-	 WHEN SEQ_CHECK =>    
-	    if txDone = '1' then      
- 	    nextState <= START1;
+	WHEN WAIT_TX2 =>
+	  if txDone = '1' then      
+ 	    nextState <= FORMAT1;
 	  else
 	    nextState <= curState;
 	  end if; 
@@ -277,6 +283,7 @@ BEGIN
   BEGIN
   
   --inital conditions 
+  D0 <= "00000000"; 
   en0 <= '0';
   rst0 <= '0';
   regreset0 <= '0';
@@ -290,37 +297,39 @@ BEGIN
   start <= '0';
   numWords_bcd <= shift_out;
   address <= cnt0Out;
+  en_SeqDone <= '0';
+  rst_SeqDone <= '0';
+  countIn <= cnt0Out;
   --if curState = INIT then 
   --INITIAL CONDITIONS 
   --end if;
   if curState = STATE1 then
   rst0 <= '1';
+  rst_SeqDone <= '1';
   end if;
   
   if curState = COUNT_CHECK then
   D0 <= rxData;
+  load0 <= '1';
   end if;
   
   if curState = A_CHECK then 
-  load0 <= '1';
+  txnow <= '1';
   end if; 
   
   if curState = NUM_CHECK then 
-  load0 <= '1'; 
+  txnow <= '1'; 
   end if; 
   
   if curState = ERROR then 
   rst0 <= '1';
   rxdone <= '1';
-  txnow <= '0';
-  end if; 
+    end if; 
   
   if curState = CORRECT_WORD then 
   en0 <= '1';
   rxdone <= '1';-- need to find number of clock cycles for when there are 3 numbers. 
-  txnow <= '1';
-  end if; 
-  
+    end if; 
   
   if curState = SHIFTER then
   en1 <= '1';
@@ -328,47 +337,29 @@ BEGIN
 
   if curState = WAIT_SHIFT then 
   load1 <= '1'; 
-  rst0 <= '1';
   --NNN
   end if; 
   
-  if curState = SPACE then
-  D0 <= "00100000";
+  if curState = FORMAT1 then
   en0 <= '1';
-  end if;
-  
-  if curState = EQUALS then
-  D0 <= "00111101";
-  en0 <= '1';
-  end if; 
-  
-  if curState = SLASH then
-  D0 <= "01011100";
-  en0 <= '1';
-  end if;                 
-              
-  if curState = nSTATE then            
-  D0 <= "01101110";
-  en0 <= '1';
-  end if; 
-  
-  if curState = rSTATE then
-  D0 <= "01110010";
-  en0 <= '1';
-  end if;                  
-                                  
-  if curState = FORMAT2 then
+  D0 <= formatout;
   load0 <= '1';
   END IF;
+                                   
+  if curState = FORMAT2 then
+    END IF;
   
   if curState = FORMAT3 then               
   txnow <= '1';              
   END IF;    
                   
-  if curState = START1 then  
-  start <= '1'; 
-  load1 <= '1';              
+  if curState = FINAL_FORMAT then
   rst0 <= '1';
+  en_SeqDone <= '1';
+  end if;
+  
+  if curState = START1 then  
+  start <= '1';            
   end if; 
   
   if curState = DATA_WAIT then
@@ -376,15 +367,20 @@ BEGIN
   
   if curState = WAIT_BYTE then
   data <= byte(7 downto 4);
+  
+  end if;
+  
+  if curState = LAST_BYTE then
+  en_SeqDone <= '1';
   end if;
   
   if curState = LOAD_BYTE then
   D0 <= q;
+  load0 <= '1';
   end if;
   
   if curState = BYTE1 then 
-  load0 <= '1';
-  end if; 
+   end if; 
   
   if curState = TRANSMIT1 then
   txnow <= '1';
@@ -397,10 +393,10 @@ BEGIN
   
   if curState = LOAD_BYTE2 then
   D0 <= q;
+  load0 <= '1';
   end if;
   
   if curState = BYTE2 then
-  load0 <= '1';
   end if;      
   
   if curState = TRANSMIT2 then

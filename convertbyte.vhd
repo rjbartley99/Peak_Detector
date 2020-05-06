@@ -16,7 +16,6 @@ end bytemux;
 
 architecture mux of bytemux is
 signal q1 : std_logic_vector(7 downto 0); 
-signal int : std_logic_vector(3 downto 0);
 begin
 
 ascii_look : process (data)
@@ -49,23 +48,23 @@ begin
           WHEN "1000" =>
        q1 <= "00111000";
            
-          WHEN "1001" => 
-       q1 <= "00111001";
+          WHEN "1001" => --a    
+       q1 <= "01100001";
          
-          WHEN "1010" =>
-       q1 <= "00111010";
+          WHEN "1010" => --b
+       q1 <= "01100010";
            
-          WHEN "1011" => 
-       q1 <= "00111011";
+          WHEN "1011" => --c
+       q1 <= "01100011";
          
-          WHEN "1100" =>
-       q1 <= "00111100";
+          WHEN "1100" => --d
+       q1 <= "01100100";
           
-          WHEN "1101" => 
-       q1 <= "00111101";
+          WHEN "1101" => --e
+       q1 <= "01100101";
          
-          WHEN "1110" =>
-       q1 <= "00111110";
+          WHEN "1110" => --f
+       q1 <= "01100110";
        
            WHEN "1111" =>
        q1 <= "00111111";
