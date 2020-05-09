@@ -8,79 +8,23 @@ use UNISIM.VComponents.all;
 entity bytemux is
     Port ( 
         clk : in std_logic;
-        data : in std_logic_vector(3 downto 0);
-        address : in std_logic_vector(5 downto 0);
-        q: out std_logic_vector(7 downto 0)
+        data : integer;
+        address : in std_logic_vector(7 downto 0);
+        q: integer
         );
 end bytemux;
 
-architecture mux of bytemux is
-signal q1 : std_logic_vector(7 downto 0); 
+architecture mux of convertbyte is
+
 begin
-
-ascii_look : process (data)
+select_int : process (address)
 begin
-    CASE data is
-          WHEN "0000" => 
-       q1 <= "00110000";
-          
-          WHEN "0001" =>
-       q1 <= "00110001";
-           
-          WHEN "0010" => 
-       q1<= "00110010";
-         
-          WHEN "0011" =>
-       q1 <= "00110011";
-         
-          WHEN "0100" =>
-       q1 <= "00110100";
-           
-          WHEN "0101" => 
-       q1 <= "00110101";
-         
-          WHEN "0110" =>
-       q1 <= "00110110";
-           
-          WHEN "0111" => 
-       q1 <= "00110111";
-          
-          WHEN "1000" =>
-       q1 <= "00111000";
-           
-          WHEN "1001" => --a    
-       q1 <= "01100001";
-         
-          WHEN "1010" => --b
-       q1 <= "01100010";
-           
-          WHEN "1011" => --c
-       q1 <= "01100011";
-         
-          WHEN "1100" => --d
-       q1 <= "01100100";
-          
-          WHEN "1101" => --e
-       q1 <= "01100101";
-         
-          WHEN "1110" => --f
-       q1 <= "01100110";
-       
-           WHEN "1111" =>
-       q1 <= "00111111";
-           WHEN others =>
-           null;
-       end case;
-end process ascii_look;
+	if (address = "00000000") then
+	q <= data/16;
+	elsif (address = "00000001") then
+	q <= data mod 16;
+	end if;
 
-    PROCESS(clk)
-    begin
-     if rising_edge(clk)then 
-       q <= q1;
-     else 
-       null;
-     end if;
-   end PROCESS;
-
+end process select_int;
 end mux;
 
