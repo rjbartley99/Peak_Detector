@@ -17,8 +17,6 @@
 -- Additional Comments:
 -- 
 ----------------------------------------------------------------------------------
-
-
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
@@ -43,7 +41,6 @@ format_look : process (countIn)
 begin
     CASE countIn is
        
-         
           WHEN "000100" =>
        q1 <= "01011100";--\
            
@@ -64,10 +61,11 @@ begin
           
           WHEN others =>
          q1 <= "00100000";
+       
        end case;
 end process format_look;
 
-    PROCESS(clk)
+  PROCESS(clk)
     begin
      if rising_edge(clk)then 
        formatout <= q1;
