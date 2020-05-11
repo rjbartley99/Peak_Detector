@@ -43,6 +43,7 @@ ARCHITECTURE myarch OF cmdProc IS
      SIGNAL rst0,rstcnt_to_4, en0:STD_LOGIC; 
      SIGNAL cnt0Out:STD_LOGIC_VECTOR(5 downto 0);
 
+ 
   COMPONENT reg
     PORT (
 	 clk: in std_logic;
@@ -55,6 +56,7 @@ ARCHITECTURE myarch OF cmdProc IS
      SIGNAL regreset0, load0: std_logic;
      SIGNAL D0, Q0: std_logic_vector(7 downto 0);
 	
+  
   COMPONENT shift
 	 PORT (
       shift_in : in std_logic_vector(7 downto 0); -- DATA IN
@@ -69,6 +71,7 @@ ARCHITECTURE myarch OF cmdProc IS
       SIGNAL shift_out: BCD_ARRAY_TYPE(2 downto 0);
       SIGNAL en1, load1, shift_reset : std_logic;
       
+  
   COMPONENT seqdonecounter
     PORT(
      clk : in std_logic;
@@ -80,6 +83,7 @@ ARCHITECTURE myarch OF cmdProc IS
      SIGNAL rst_SeqDone, en_SeqDone:STD_LOGIC; 
      SIGNAL SEQcntOut:STD_LOGIC_VECTOR(1 downto 0);
       
+ 
   COMPONENT byteMux
      PORT ( 
       clk : in std_logic;
@@ -92,6 +96,7 @@ ARCHITECTURE myarch OF cmdProc IS
       SIGNAL loadDATA: std_logic;   
       SIGNAL q: std_logic_vector(7 downto 0);
       
+  
   COMPONENT formatmux is
     PORT ( 
         clk : in std_logic;
@@ -110,9 +115,9 @@ ARCHITECTURE myarch OF cmdProc IS
   FOR mux1: bytemux USE ENTITY work.bytemux(mux);
   FOR mux2: formatmux USE ENTITY work.formatmux(Behavioral);
  
-  TYPE state_type IS (STATE1, INIT, COUNT_CHECK, A_CHECK, NUM_CHECK, ERROR, CORRECT_WORD, 
-  SHIFTER, WAIT_SHIFT, FORMAT1, FORMAT2, FORMAT3, WAIT_FORMAT, FORMAT_CHECK, SEQ_CHECK, FINAL_FORMAT, START1, DATA_WAIT,WAIT_BYTE,
-  LOAD_BYTE, LAST_BYTE,TRANSMIT1, WAIT_TX, LOAD_BYTE2, TRANSMIT2, WAIT_TX2 ); 
+  TYPE state_type IS (INIT, RXNOW_WAIT, COUNT_CHECK, A_CHECK, NUM_CHECK, ERROR, CORRECT_WORD,  SHIFTER, WAIT_SHIFT, 
+  FORMAT1, FORMAT2, FORMAT3, WAIT_FORMAT, FORMAT_CHECK, SEQ_CHECK,FINAL_FORMAT,
+  START1,DATA_WAIT,WAIT_BYTE, LOAD_BYTE, LAST_BYTE,TRANSMIT1, WAIT_TX, LOAD_BYTE2, TRANSMIT2, WAIT_TX2 ); 
   SIGNAL curState, nextState: state_type;
 
 
@@ -128,10 +133,10 @@ BEGIN
   BEGIN    
     CASE curState IS
 	
-	WHEN STATE1 =>
-	nextState <= INIT;
-	
 	WHEN INIT =>
+	nextState <= RXNOW_WAIT;
+	
+	WHEN RXNOW_WAIT =>
 	 if rxNow = '1' then 
 		nextState <= COUNT_CHECK;
 	 else 
@@ -162,14 +167,14 @@ BEGIN
 	end if; 
 	
 	WHEN ERROR => 
-     nextState <= curState;
+     nextState <= RXNOW_WAIT;
 	  
 	WHEN CORRECT_WORD =>
 	  if (cnt0Out <= "000011") and (cnt0Out > "000000" ) then
 	  nextState <= SHIFTER;                                 
 	  elsif 
       cnt0Out = "000000" then 
-      nextState <= INIT;
+      nextState <= RXNOW_WAIT;
 	  else
 	  nextState <= curState;
 	  end if; 
@@ -178,7 +183,7 @@ BEGIN
 	 if cnt0Out >= "000100"  then 
 	 NextState <= WAIT_SHIFT;        
 	 else  
-	   nextState <= INIT;
+	   nextState <= RXNOW_WAIT;
 	 end if;
 	
 	WHEN WAIT_SHIFT =>
@@ -206,7 +211,7 @@ BEGIN
 	
 	WHEN FORMAT_CHECK =>
 	  if SEQcntOut = "10" and (cnt0Out = "001000") then
-	    nextState <= STATE1;
+	    nextState <= INIT;
 	  elsif cnt0Out > "001001" then
 	   nextState <= SEQ_CHECK;
 	   else
@@ -278,82 +283,94 @@ BEGIN
   combi_out: PROCESS(curState)
   BEGIN
   
-  --inital conditions 
-  D0 <= "00000000"; 
+  --inital conditions  
   en0 <= '0';
+  en1 <= '0';
+  en_SeqDone <= '0';
+  
   rst0 <= '0';
   rstcnt_to_4 <= '0';
   regreset0 <= '0';
+  shift_reset <= '0';
+  rst_SeqDone <= '0';
+  
   load0 <= '0';
   load1 <= '0';
+  loadDATA <= '0';
+  
+  data <= "0000";
+  D0 <= "00000000";
+  numWords_bcd <= shift_out;
+  shift_in <= rxdata;
   rxdone <= '0';
   txData <= Q0;
   txnow <= '0';
-  en1 <= '0';
-  shift_in <= rxdata;
-  shift_reset <= '0';
   start <= '0';
-  numWords_bcd <= shift_out;
-  data <= "0000";
-  loadDATA <= '0';
-  en_SeqDone <= '0';
-  rst_SeqDone <= '0';
   countIn <= cnt0Out;
-  --if curState = INIT then 
-  --INITIAL CONDITIONS 
-  --end if;
-  if curState = STATE1 then
+ 
+  --INITILASE COMPONENTS
+  if curState = INIT then
   rst0 <= '1';
   rst_SeqDone <= '1';
   shift_reset <= '1';
   regreset0 <= '1';
   end if;
   
+  --LOAD OUTPUT REGISTER WITH RXINPUT
   if curState = COUNT_CHECK then
   D0 <= rxData;
   load0 <= '1';
   end if;
   
+  --SEND TXD to computer
   if curState = A_CHECK then 
   txnow <= '1';
   end if; 
   
+  --SEND TXD to computer
   if curState = NUM_CHECK then 
   txnow <= '1'; 
   end if; 
   
+  --SIGNAL to reciver that data has been processed
   if curState = ERROR then 
-  rst0 <= '1';
   rxdone <= '1';
     end if; 
   
+  --SIGNAL to reciver that data has been processed and count once 
   if curState = CORRECT_WORD then 
   en0 <= '1';
   rxdone <= '1';-- need to find number of clock cycles for when there are 3 numbers. 
     end if; 
   
+  -- LOAD current recieved nuumber to shift register LSB and shift previous numbers to left
   if curState = SHIFTER then
   en1 <= '1';
   end if;
 
+--LOAD BCD into output of shifter which is connected to numwords
   if curState = WAIT_SHIFT then 
   load1 <= '1'; 
   --NNN
   end if; 
   
+  --count up to increment adress in format table
   if curState = FORMAT1 then
   en0 <= '1';
   END IF;
-                                   
+  
+  --load output of format table to output register                                 
   if curState = FORMAT2 then
   D0 <= formatout;
   load0 <= '1';
   END IF;
   
+  --send txD to computer
   if curState = FORMAT3 then
   txnow <= '1';
   END IF;
-        
+  
+  --set counter to four       
   if curState = FINAL_FORMAT then
   rstcnt_to_4 <= '1';
   en_SeqDone <= '1';
@@ -362,9 +379,6 @@ BEGIN
   if curState = START1 then  
   start <= '1';            
   end if; 
-  
-  if curState = DATA_WAIT then
-  end if;
   
   if curState = WAIT_BYTE then
   data <= byte(7 downto 4);
@@ -382,7 +396,6 @@ BEGIN
   
   if curState = TRANSMIT1 then
   txnow <= '1';
-  en0 <= '1';
   end if;                 
   
   if curState = WAIT_TX then
@@ -404,7 +417,7 @@ BEGIN
   seq_state: PROCESS (clk, reset)
   BEGIN
     if reset = '1' then
-      curState <= STATE1;
+      curState <= INIT;
     elsif clk'EVENT AND clk='1' then
       curState <= nextState;
     end if;
