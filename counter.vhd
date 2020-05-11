@@ -4,20 +4,23 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity myCounter is
 port(
-    clk : in std_ulogic;
-    rst : in std_ulogic;
-    en : in std_ulogic;
-    cntOut : out std_ulogic_vector(5 downto 0)
+    clk : in std_logic;
+    rst : in std_logic;
+    rst_to_4 : in std_logic;
+    en : in std_logic;
+    cntOut : out std_logic_vector(5 downto 0)
     );
 end myCounter;
 
 architecture Behavioral of myCounter is
-    signal counter, counter_next : std_ulogic_vector(5 downto 0);
+    signal counter, counter_next : std_logic_vector(5 downto 0);
 begin
-    process(clk)
+    process(clk,rst)
     begin
            if rst = '1' then
               counter <= "000000";
+           elsif rst_to_4 = '1' then
+              counter <= "000100";   
            elsif clk'EVENT AND clk='1' then
               counter <= counter_next;
            end if;
@@ -30,7 +33,7 @@ begin
         elsif counter = "111111" then
               counter_next<= counter;
         else
-              counter_next <= std_ulogic_vector(unsigned(counter) + 1);
+              counter_next <= std_logic_vector(unsigned(counter) + 1);
         end if;
     end process;
 
