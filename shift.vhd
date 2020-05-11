@@ -9,7 +9,8 @@ entity shift is
         en_shift : in std_logic; -- CHIP ENABLE
         clk : in std_logic; -- CLOCK
         shift_out : out BCD_ARRAY_TYPE(2 downto 0); -- SHIFTER OUTPUT
-        load_shift : in std_logic
+        load_shift : in std_logic; --LOAD REGISTER TO OUTPUT
+        shift_reset : in std_logic --ASYNCHRONOUS RESET
         );
 end shift;
 
@@ -18,13 +19,15 @@ architecture shift_arch of shift is
 --SIGNALS
 signal s_register : BCD_ARRAY_TYPE (2 downto 0); -- REGISTER CONTENTS
 
-
 begin
 
 --PROCESS : SHIFT
-shift : process (clk,en_shift,load_shift)
+shift : process (clk,shift_reset)
 begin
-    if rising_edge(clk) and en_shift='1' then -- FULLY SYNCHRONOUS AND ENABLED
+    if shift_reset='1' then
+    s_register <= ("0000","0000","0000");
+    shift_out <= ("1111","1111","1111");--SET NUMWORDS TO INITILASED VALUE --> (f,f,f)
+    elsif rising_edge(clk) and en_shift='1' then -- FULLY SYNCHRONOUS AND ENABLED
        for i in 2 downto 1 loop 
           s_register(i) <= s_register(i-1); -- SHIFT ALL BITS UP 1
        end loop;
