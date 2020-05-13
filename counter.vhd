@@ -15,7 +15,7 @@ end myCounter;
 architecture Behavioral of myCounter is
     signal counter, counter_next : std_logic_vector(5 downto 0);
 begin
-    process(clk,rst)
+    process(clk,rst,rst_to_4)
     begin
            if rst = '1' then
               counter <= "000000";
