@@ -94,7 +94,7 @@ ARCHITECTURE myarch OF cmdProc IS
       END COMPONENT;   
       SIGNAL data: std_logic_vector(3 downto 0);
       SIGNAL loadDATA: std_logic;   
-      SIGNAL q: std_logic_vector(7 downto 0);
+      SIGNAL asciiout: std_logic_vector(7 downto 0);
       
   -- ASCII look up table for which is used to ouput various different sequences to FORMAT the PuTTY console
   COMPONENT formatmux is
@@ -126,7 +126,7 @@ BEGIN
  reg0: reg PORT MAP(clk, regreset0, load0, D0, Q0); 
  shift0: shift PORT MAP(shift_in,en1,load1,clk,shift_out,shift_reset);
  Seqcnt: SeqDoneCounter PORT MAP(clk,rst_SeqDone,en_SeqDone,SEQcntOut);
- mux1: ByteMUX PORT MAP(clk,data,loadDATA,q);
+ mux1: ByteMUX PORT MAP(clk,data,loadDATA,asciiout);
  mux2: formatmux PORT MAP(clk,countIn,formatout);
  
  combi_nextState: PROCESS(curState, rxNow, rxData, cnt0Out,txdone,dataready,SEQcntOut)
@@ -243,7 +243,7 @@ BEGIN
 	  nextState <= CurState;
    	  end if;
    	
-   	WHEN WAIT_BYTE =>   -- important delay state to prevent outputting the intialised value of "dd" in the byte line to the transmitter
+   	WHEN WAIT_BYTE =>   
    	  nextState <= LOAD_BYTE;
    	  
    	WHEN LOAD_BYTE => -- checking if this is the last byte from the data processor
@@ -400,7 +400,7 @@ BEGIN
   end if;
   
   if curState = LOAD_BYTE then
-  D0 <= q;  --ascii output of BYTEMUX being sent to transmitter
+  D0 <= asciiout;  --ascii output of BYTEMUX loaded into output register
   load0 <= '1';
   end if;
   
@@ -414,7 +414,7 @@ BEGIN
   end if;
   
   if curState = LOAD_BYTE2 then 
-  D0 <= q; -- ascii output of BYTEMUX being sent to transmitter 
+  D0 <= asciiout; -- ascii output of BYTEMUX loaded into output register
   load0 <= '1';
   end if;
   
