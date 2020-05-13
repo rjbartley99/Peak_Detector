@@ -116,7 +116,7 @@ ARCHITECTURE myarch OF cmdProc IS
   FOR mux2: formatmux USE ENTITY work.formatmux(Behavioral);
  
   TYPE state_type IS (INIT, RXNOW_WAIT, COUNT_CHECK, A_CHECK, NUM_CHECK, ERROR, CORRECT_WORD,  SHIFTER, WAIT_SHIFT, 
-  FORMAT1, FORMAT2, FORMAT3, WAIT_FORMAT, FORMAT_CHECK, SEQ_CHECK,FINAL_FORMAT,
+  FORMAT1, FORMAT2, FORMAT3, WAIT_FORMAT, FORMAT_CHECK, SEQ_CHECK,NEW_LINE, FINAL_FORMAT,
   START1,DATA_WAIT,WAIT_BYTE, LOAD_BYTE, LAST_BYTE,TRANSMIT1, WAIT_TX, LOAD_BYTE2, TRANSMIT2, WAIT_TX2 ); 
   SIGNAL curState, nextState: state_type;
 
@@ -212,7 +212,7 @@ BEGIN
 	WHEN FORMAT_CHECK =>
 	  if SEQcntOut = "10" and (cnt0Out = "001000") then
 	    nextState <= INIT;
-	  elsif cnt0Out > "001001" then
+	  elsif cnt0Out > "001000" then
 	   nextState <= SEQ_CHECK;
 	   else
 	   nextState <= FORMAT1;
@@ -221,9 +221,14 @@ BEGIN
 	WHEN SEQ_CHECK =>    
 	  if SEQcntOut = "01" then
 	    nextState <= FINAL_FORMAT;
-	  else 
+	  elsif cnt0Out = "011101" then --IF COUNT ==29, THERE HAVE BEEN 20 BYTES=> NEW LINE FOR BYTES IN PUTTY 
+	    nextState <= NEW_LINE;
+	  else
 	    nextState <= START1; 
 	  end if;                 
+	
+	WHEN NEW_LINE =>
+	   nextState <= FORMAT1;
 	
 	WHEN FINAL_FORMAT =>
 	   nextState <= FORMAT1;
@@ -231,17 +236,17 @@ BEGIN
 	WHEN START1 =>
 	  nextState <= DATA_WAIT; 
 	
-	WHEN DATA_WAIT => -- waiting for byte signal to be ready 
+	WHEN DATA_WAIT =>
 	  if dataready = '1' then
 	  nextState <= WAIT_BYTE;
 	  else 
 	  nextState <= CurState;
    	  end if;
    	
-   	WHEN WAIT_BYTE =>  
+   	WHEN WAIT_BYTE =>   
    	  nextState <= LOAD_BYTE;
    	  
-   	WHEN LOAD_BYTE => -- checking if this is the last byte from the data processor 
+   	WHEN LOAD_BYTE =>
    	  if seqDone = '1' then
 	  nextState <= LAST_BYTE; 
 	  else
@@ -254,7 +259,7 @@ BEGIN
 	WHEN TRANSMIT1 =>
 	  nextState <= WAIT_TX; 
           	
-	WHEN WAIT_TX => -- waiting for the transmitter to finish transmitting 
+	WHEN WAIT_TX =>
 	  if txDone = '1' then      
  	    nextState <= LOAD_BYTE2;
 	  else
@@ -267,7 +272,7 @@ BEGIN
 	WHEN TRANSMIT2 =>      
 	   nextState <= WAIT_TX2; 
 	
-	WHEN WAIT_TX2 => -- waiting for the transmitter to finish transmitting 
+	WHEN WAIT_TX2 =>
 	  if txDone = '1' then      
  	    nextState <= FORMAT1;
 	  else
@@ -351,7 +356,7 @@ BEGIN
 --LOAD BCD into output of shifter which is connected to numwords
   if curState = WAIT_SHIFT then 
   load1 <= '1'; 
-  --NNN
+  rst0 <= '1';
   end if; 
   
   --count up to increment adress in format table
@@ -370,7 +375,12 @@ BEGIN
   txnow <= '1';
   END IF;
   
-  --set counter to four       
+  --set counter to four so that it runs through the /r/n in the format table to start a line in putty
+  if curState = NEW_LINE then
+  rstcnt_to_4 <= '1';
+  end if;
+   
+  --set counter to four and count seq counter so that it gets sent back to init after the returning the last line of bytes     
   if curState = FINAL_FORMAT then
   rstcnt_to_4 <= '1';
   en_SeqDone <= '1';
@@ -381,16 +391,16 @@ BEGIN
   end if; 
   
   if curState = WAIT_BYTE then
-  data <= byte(7 downto 4); -- the four most significant bits of the byte signal which signify the first hexadecimal number being sent to the byte
-  loadDATA <= '1';          -- multiplexer to be changed to ascii
+  data <= byte(7 downto 4);
+  loadDATA <= '1';
   end if;
   
   if curState = LAST_BYTE then
-  en_SeqDone <= '1';       -- enabling the seqdonecounter to signify this being the last byte 
+  en_SeqDone <= '1';
   end if;
   
   if curState = LOAD_BYTE then
-  D0 <= q;                 -- ascii output of multiplexer being sent to transmitter
+  D0 <= q;
   load0 <= '1';
   end if;
   
@@ -399,12 +409,12 @@ BEGIN
   end if;                 
   
   if curState = WAIT_TX then
-  data <= byte(3 downto 0);  -- the next four least significant bits of the byte signal which signify the second hexadecimal number being sent to the byte
-  loadDATA <= '1';           -- multiplexer to be changed to ascii 
+  data <= byte(3 downto 0);
+  loadDATA <= '1';
   end if;
   
   if curState = LOAD_BYTE2 then
-  D0 <= q;                   -- ascii output of multiplexer being sent to transmitter 
+  D0 <= q;
   load0 <= '1';
   end if;
   
