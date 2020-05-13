@@ -236,17 +236,17 @@ BEGIN
 	WHEN START1 =>
 	  nextState <= DATA_WAIT; 
 	
-	WHEN DATA_WAIT =>
+	WHEN DATA_WAIT => -- waiting for byte signal to be ready 
 	  if dataready = '1' then
 	  nextState <= WAIT_BYTE;
 	  else 
 	  nextState <= CurState;
    	  end if;
    	
-   	WHEN WAIT_BYTE =>   
+   	WHEN WAIT_BYTE =>   --important delay state to prevent outputting the intialised value of "dd" in the byte line to the transmitter
    	  nextState <= LOAD_BYTE;
    	  
-   	WHEN LOAD_BYTE =>
+   	WHEN LOAD_BYTE => -- checking if this is the last byte from the data processor
    	  if seqDone = '1' then
 	  nextState <= LAST_BYTE; 
 	  else
@@ -259,7 +259,7 @@ BEGIN
 	WHEN TRANSMIT1 =>
 	  nextState <= WAIT_TX; 
           	
-	WHEN WAIT_TX =>
+	WHEN WAIT_TX => -- waiting for the transmitter to finish transmitting 
 	  if txDone = '1' then      
  	    nextState <= LOAD_BYTE2;
 	  else
@@ -272,7 +272,7 @@ BEGIN
 	WHEN TRANSMIT2 =>      
 	   nextState <= WAIT_TX2; 
 	
-	WHEN WAIT_TX2 =>
+	WHEN WAIT_TX2 => -- waiting for the transmitter to finish transmitting 
 	  if txDone = '1' then      
  	    nextState <= FORMAT1;
 	  else
@@ -391,16 +391,16 @@ BEGIN
   end if; 
   
   if curState = WAIT_BYTE then
-  data <= byte(7 downto 4);
-  loadDATA <= '1';
+  data <= byte(7 downto 4); -- the four most significant bits of the byte signal which signify the first hexadecimal number being sent to the ASCII look up table in BYTEMUX
+  loadDATA <= '1'; -- load output of mux with converted ascii 
   end if;
   
   if curState = LAST_BYTE then
-  en_SeqDone <= '1';
+  en_SeqDone <= '1';  -- enabling the seqdonecounter to signify this being the last byte 
   end if;
   
   if curState = LOAD_BYTE then
-  D0 <= q;
+  D0 <= q;  --ascii output of BYTEMUX being sent to transmitter
   load0 <= '1';
   end if;
   
@@ -409,12 +409,12 @@ BEGIN
   end if;                 
   
   if curState = WAIT_TX then
-  data <= byte(3 downto 0);
-  loadDATA <= '1';
+  data <= byte(3 downto 0); -- the next four least significant bits of the byte signal which signify the second hexadecimal number being sent to the ASCII look up table in BYTEMUX
+  loadDATA <= '1'; -- load output of mux with converted ascii 
   end if;
   
-  if curState = LOAD_BYTE2 then
-  D0 <= q;
+  if curState = LOAD_BYTE2 then 
+  D0 <= q; -- ascii output of BYTEMUX being sent to transmitter 
   load0 <= '1';
   end if;
   
