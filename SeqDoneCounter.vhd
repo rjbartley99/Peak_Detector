@@ -35,7 +35,7 @@ end seqdonecounter;
 architecture Behavioral of seqdonecounter is
     signal counter, counter_next : std_logic_vector(1 downto 0);
 begin
-    process(clk)
+    process(clk,rst)
     begin
            if rst = '1' then
               counter <= "00";

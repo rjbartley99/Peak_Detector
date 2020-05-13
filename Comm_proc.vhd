@@ -30,7 +30,7 @@ port(
 end;
 
 ARCHITECTURE myarch OF cmdProc IS
-
+ -- MAIN COUNTER FOR SYSTEM, used in ANNN and for iterating through the FORMATMUX lookup table
   COMPONENT counter
 	PORT (
      clk: in std_logic;
@@ -43,7 +43,7 @@ ARCHITECTURE myarch OF cmdProc IS
      SIGNAL rst0,rstcnt_to_4, en0:STD_LOGIC; 
      SIGNAL cnt0Out:STD_LOGIC_VECTOR(5 downto 0);
 
- 
+ --OUTPUT REGISTER to store values for outputting to Tx
   COMPONENT reg
     PORT (
 	 clk: in std_logic;
@@ -56,7 +56,7 @@ ARCHITECTURE myarch OF cmdProc IS
      SIGNAL regreset0, load0: std_logic;
      SIGNAL D0, Q0: std_logic_vector(7 downto 0);
 	
-  
+  --SHIFT REGISTER to store NNN and output to NUMWORDs
   COMPONENT shift
 	 PORT (
       shift_in : in std_logic_vector(7 downto 0); -- DATA IN
@@ -71,7 +71,7 @@ ARCHITECTURE myarch OF cmdProc IS
       SIGNAL shift_out: BCD_ARRAY_TYPE(2 downto 0);
       SIGNAL en1, load1, shift_reset : std_logic;
       
-  
+  --SECOND COUNTER used to signify final iterations of state machine
   COMPONENT seqdonecounter
     PORT(
      clk : in std_logic;
@@ -83,7 +83,7 @@ ARCHITECTURE myarch OF cmdProc IS
      SIGNAL rst_SeqDone, en_SeqDone:STD_LOGIC; 
      SIGNAL SEQcntOut:STD_LOGIC_VECTOR(1 downto 0);
       
- 
+  -- ASCII look up table for converting 4 bit hexadecimal numbers from byte signal to ASCII
   COMPONENT byteMux
      PORT ( 
       clk : in std_logic;
@@ -96,7 +96,7 @@ ARCHITECTURE myarch OF cmdProc IS
       SIGNAL loadDATA: std_logic;   
       SIGNAL q: std_logic_vector(7 downto 0);
       
-  
+  -- ASCII look up table for which is used to ouput various different sequences to FORMAT the PuTTY console
   COMPONENT formatmux is
     PORT ( 
         clk : in std_logic;
@@ -186,7 +186,7 @@ BEGIN
 	   nextState <= RXNOW_WAIT;
 	 end if;
 	
-	WHEN WAIT_SHIFT =>
+	WHEN WAIT_SHIFT => -- waiting for the transmitter to finish transmitting last N from ANNN before outputting 
 	 if txdone ='1' then
 	  nextState <= FORMAT1;
     else
@@ -202,7 +202,7 @@ BEGIN
 	WHEN FORMAT3 =>         
 	   nextState <= WAIT_FORMAT;
     
-    WHEN WAIT_FORMAT =>
+    WHEN WAIT_FORMAT => -- waiting for the transmitter to finish transmitting 
        if txdone = '1' then 
        nextState <= FORMAT_CHECK;
        else    
@@ -210,9 +210,9 @@ BEGIN
 	   end if;
 	
 	WHEN FORMAT_CHECK =>
-	  if SEQcntOut = "10" and (cnt0Out = "001000") then
+	  if SEQcntOut = "10" and (cnt0Out = "001000") then --waits until "\r\n" has been outputted in Tx until returning to intialised state
 	    nextState <= INIT;
-	  elsif cnt0Out > "001000" then
+	  elsif cnt0Out > "001000" then -- loops in intial formatting states until cnt = 8 and " == \r\n " is outputted and then outputs just a space between bytes        
 	   nextState <= SEQ_CHECK;
 	   else
 	   nextState <= FORMAT1;
@@ -221,7 +221,7 @@ BEGIN
 	WHEN SEQ_CHECK =>    
 	  if SEQcntOut = "01" then
 	    nextState <= FINAL_FORMAT;
-	  elsif cnt0Out = "011101" then --IF COUNT ==29, THERE HAVE BEEN 20 BYTES=> NEW LINE FOR BYTES IN PUTTY 
+	  elsif cnt0Out = "011101" then --IF COUNT == 29, THERE HAVE BEEN 20 BYTES => NEW LINE FOR BYTES IN PUTTY 
 	    nextState <= NEW_LINE;
 	  else
 	    nextState <= START1; 
@@ -243,7 +243,7 @@ BEGIN
 	  nextState <= CurState;
    	  end if;
    	
-   	WHEN WAIT_BYTE =>   --important delay state to prevent outputting the intialised value of "dd" in the byte line to the transmitter
+   	WHEN WAIT_BYTE =>   -- important delay state to prevent outputting the intialised value of "dd" in the byte line to the transmitter
    	  nextState <= LOAD_BYTE;
    	  
    	WHEN LOAD_BYTE => -- checking if this is the last byte from the data processor
@@ -424,7 +424,7 @@ BEGIN
                               
   END PROCESS; 
 
-  seq_state: PROCESS (clk, reset)
+  seq_state: PROCESS (clk, reset) -- sequential process for state machine
   BEGIN
     if reset = '1' then
       curState <= INIT;
