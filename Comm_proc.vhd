@@ -167,17 +167,14 @@ BEGIN
 	end if; 
 	
 	WHEN ERROR => 
-     nextState <= RXNOW_WAIT;
+     nextState <= INIT;
 	  
 	WHEN CORRECT_WORD =>
 	  if (cnt0Out <= "000011") and (cnt0Out > "000000" ) then
 	  nextState <= SHIFTER;                                 
-	  elsif 
-      cnt0Out = "000000" then 
+	  else 
       nextState <= RXNOW_WAIT;
-	  else
-	  nextState <= curState;
-	  end if; 
+	  end if;
  
    WHEN SHIFTER =>
 	 if cnt0Out >= "000100"  then 
