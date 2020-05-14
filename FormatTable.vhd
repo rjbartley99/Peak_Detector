@@ -6,8 +6,8 @@
 -- Design Name: Format Look up table
 -- Module Name: formatmux - Behavioral
 -- Project Name: Peak Dectector -- Command Processor
--- Description: A look up table which uses the processors main counter component as an address.
--- This allows the table to be used to output different sequencs of symbols in the PuTTy comsole for formatting
+-- Description: An ASCII look up table which uses the processors main counter component as an address.
+-- This allows the table to be used to output different sequencs of symbols in the PuTTy comsole for formatting.
 ----------------------------------------------------------------------------------
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;

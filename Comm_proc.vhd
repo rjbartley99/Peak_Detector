@@ -128,7 +128,7 @@ ARCHITECTURE myarch OF cmdProc IS
      
   FOR cnt0: counter USE ENTITY work.myCounter(Behavioral); 
   FOR reg0: reg USE ENTITY work.myRegister(Behavioral);
-  FOR shift0: shift USE ENTITY work.shift(shift_arch);  
+  FOR shift0: shift USE ENTITY work.shift(Behavioral);  
   FOR Seqcnt: seqdonecounter USE ENTITY work.seqdonecounter(Behavioral);
   FOR mux1: bytemux USE ENTITY work.bytemux(mux);
   FOR mux2: formatmux USE ENTITY work.formatmux(Behavioral);
