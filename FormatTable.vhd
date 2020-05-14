@@ -1,30 +1,18 @@
 ----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
+--
+-- Engineer: Will Myers
 -- 
 -- Create Date: 06.05.2020 00:09:09
--- Design Name: 
--- Module Name: FormatTable - Behavioral
--- Project Name: 
--- Target Devices: 
--- Tool Versions: 
--- Description: 
--- 
--- Dependencies: 
--- 
--- Revision:
--- Revision 0.01 - File Created
--- Additional Comments:
--- 
+-- Design Name: Format Look up table
+-- Module Name: formatmux - Behavioral
+-- Project Name: Peak Dectector -- Command Processor
+-- Description: A look up table which uses the processors main counter component as an address.
+-- This allows the table to be used to output different sequencs of symbols in the PuTTy comsole for formatting
 ----------------------------------------------------------------------------------
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
 
--- Uncomment the following library declaration if instantiating
--- any Xilinx leaf cells in this code.
---library UNISIM;
---use UNISIM.VComponents.all;
 entity formatmux is
     Port ( 
         clk : in std_logic;
@@ -36,7 +24,8 @@ end formatmux;
 architecture Behavioral of formatmux is
 signal q1 : std_logic_vector(7 downto 0); 
 begin
-
+--combinational process which outputs a specified character in ascii code dependent on the adrees which is connected 
+--to the main counter
 format_look : process (countIn)
 begin
     CASE countIn is
@@ -71,6 +60,7 @@ begin
        end case;
 end process format_look;
 
+--sequential process to have the output opf the multiplexer clock driven to prevent glitching.
   PROCESS(clk)
     begin
      if rising_edge(clk)then 
