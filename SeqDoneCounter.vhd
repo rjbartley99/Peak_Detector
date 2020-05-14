@@ -1,21 +1,13 @@
 ----------------------------------------------------------------------------------
--- Company: 
--- Engineer: 
+-- Engineer: Will Myers
 -- 
 -- Create Date: 05.05.2020 20:02:09
--- Design Name: 
--- Module Name: SeqDoneCounter - Behavioral
--- Project Name: 
--- Target Devices: 
--- Tool Versions: 
--- Description: 
--- 
--- Dependencies: 
--- 
--- Revision:
--- Revision 0.01 - File Created
--- Additional Comments:
--- 
+-- Design Name: SeqDone Counter
+-- Module Name: seqdonecounter - Behavioral
+-- Project Name:Peak Detector - Command Processor
+-- Description: 2 bit counter used in the command processor to drive decisions which involve ending the 
+-- outputting of bytes and returning the fsm to the initial state ready to recive more input commands
+
 ----------------------------------------------------------------------------------
 
 
@@ -35,6 +27,8 @@ end seqdonecounter;
 architecture Behavioral of seqdonecounter is
     signal counter, counter_next : std_logic_vector(1 downto 0);
 begin
+    --aysnchronous reset and reset to four
+    --synchronous process to ensure counter is edge driven
     process(clk,rst)
     begin
            if rst = '1' then
@@ -43,7 +37,8 @@ begin
               counter <= counter_next;
            end if;
     end process;
-
+    
+   -- asynchronous enable to increment counter
     counter_comb : process(counter, en)
     begin
         if en = '0' then
@@ -54,7 +49,7 @@ begin
               counter_next <= std_logic_vector(unsigned(counter) + 1);
         end if;
     end process;
-
+    --output register to prevent glitching
     cntOut_comb : process(counter)
     begin
         SEQcntOut <= counter;

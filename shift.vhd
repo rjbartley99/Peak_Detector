@@ -1,5 +1,18 @@
-library ieee;
+----------------------------------------------------------------------------------
+--
+-- Engineer: Oscar Fuller and Will Myers
+-- 
+-- Create Date: 06.05.2020 00:09:09
+-- Design Name: Shift Register 
+-- Module Name: shift - Behavioral
+-- Project Name: Peak Dectector -- Command Processor
+-- Description: 3x4 Shift Register which loads the current number from the input sequence into the LSB and 
+-- shift the prvious numbers to the left once until it has been filled with the 3 numbers in BCD format. It then has 
+--a synchronous ouput with a load which is set high when it is ready to be sent to numwords.
+----------------------------------------------------------------------------------
 
+
+library ieee;
 use ieee.std_logic_1164.all;
 use work.common_pack.all;
 
@@ -14,7 +27,7 @@ entity shift is
         );
 end shift;
 
-architecture shift_arch of shift is
+architecture Behavioral of shift is
     
 --SIGNALS
 signal s_register : BCD_ARRAY_TYPE (2 downto 0); -- REGISTER CONTENTS
@@ -24,7 +37,7 @@ begin
 --PROCESS : SHIFT
 shift : process (clk,shift_reset)
 begin
-    if shift_reset='1' then
+    if shift_reset='1' then--ASYNCHRONOUS RESET
     s_register <= ("0000","0000","0000");
     elsif rising_edge(clk) and en_shift='1' then -- FULLY SYNCHRONOUS AND ENABLED
        for i in 2 downto 1 loop 
@@ -39,9 +52,9 @@ begin
 if shift_reset='1' then
  shift_out <= ("1111","1111","1111");--SET NUMWORDS TO INITILASED VALUE --> (f,f,f)
 elsif rising_edge(clk) and load_shift ='1' then
-          shift_out <= s_register; -- WRITE REGISTER CONTENTS TO OUTPUT;
+          shift_out <= s_register; -- WRITE REGISTER CONTENTS TO OUTPUT SYNCHRONOUSLY;
 end if;
 end process;
-end shift_arch;
+end Behavioral;
 
 

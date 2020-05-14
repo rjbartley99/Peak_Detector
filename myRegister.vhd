@@ -1,3 +1,16 @@
+----------------------------------------------------------------------------------
+--
+-- Engineer: Oscar Munday and Oscar Fuller
+-- 
+-- Create Date: 06.05.2020 00:09:09
+-- Design Name: Outptut register 
+-- Module Name: myRegister - Behavioral
+-- Project Name: Peak Dectector -- Command Processor
+-- Description: An edge driven register with enable, which has its ouput to connected to the transmitter so that the transmitter
+-- may hold the desired output values without requiring the use of latches.
+----------------------------------------------------------------------------------
+
+
 LIBRARY ieee; 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
@@ -14,7 +27,7 @@ port(
 end myRegister; 
 
 ARCHITECTURE Behavioral of myRegister is
-
+-- sequential process with asynchronous reset and synchronous load for the register
 begin
     PROCESS(clk,regreset)
     begin
