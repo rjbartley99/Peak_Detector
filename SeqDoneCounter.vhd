@@ -1,7 +1,7 @@
 ----------------------------------------------------------------------------------
 -- Engineer: Will Myers
 -- 
--- Create Date: 05.05.2020 20:02:09
+-- Create Date: 21.04.2020
 -- Design Name: SeqDone Counter
 -- Module Name: seqdonecounter - Behavioral
 -- Project Name:Peak Detector - Command Processor

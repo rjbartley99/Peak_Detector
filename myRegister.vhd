@@ -2,7 +2,7 @@
 --
 -- Engineer: Oscar Munday and Oscar Fuller
 -- 
--- Create Date: 06.05.2020 00:09:09
+-- Create Date: 27.03.2020
 -- Design Name: Outptut register 
 -- Module Name: myRegister - Behavioral
 -- Project Name: Peak Dectector -- Command Processor

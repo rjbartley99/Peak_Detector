@@ -2,7 +2,7 @@
 --
 -- Engineer: Will Myers
 -- 
--- Create Date: 06.05.2020 00:09:09
+-- Create Date: 05.4.2020 
 -- Design Name: Format Look up table
 -- Module Name: formatmux - Behavioral
 -- Project Name: Peak Dectector -- Command Processor

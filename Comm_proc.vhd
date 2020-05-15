@@ -2,7 +2,7 @@
 --
 -- Engineer: Will Myers, Oscar Fuller, Oscar Munday
 -- 
--- Create Date: 06.05.2020 00:09:09
+-- Create Date: 16.03.2020 
 -- Design Name: TOP LEVEL ARCHITECTURE AND STATE MACHINE
 -- Module Name: cmdProc - myarch
 -- Project Name: Peak Dectector -- Command Processor

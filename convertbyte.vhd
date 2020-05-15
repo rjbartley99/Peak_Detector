@@ -2,7 +2,7 @@
 --
 -- Engineer: Oscar Fuller and Will Myers
 -- 
--- Create Date: 06.05.2020 00:09:09
+-- Create Date: 10.04.2020 
 -- Design Name: Byte Look up table
 -- Module Name: bytemux - Behavioral
 -- Project Name: Peak Dectector -- Command Processor

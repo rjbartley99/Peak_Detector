@@ -2,7 +2,7 @@
 --
 -- Engineer: Oscar Munday and Will Myers
 -- 
--- Create Date: 06.05.2020 00:09:09
+-- Create Date: 23.03.2020 
 -- Design Name: main counter for command processor
 -- Module Name: mycounter - Behavioral
 -- Project Name: Peak Dectector -- Command Processor
