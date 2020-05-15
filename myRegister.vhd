@@ -32,8 +32,8 @@ begin
     PROCESS(clk,regreset)
     begin
      if regreset ='1' then
-     Q <="11111111";  -- a default value
-     elsif rising_edge(clk) and load = '1' then -- Q is clocked for stable data storage (maintains single value per clock cycle)
+     Q <="11111111";
+     elsif rising_edge(clk) and load = '1' then
        Q <= D;
      else 
        null;
